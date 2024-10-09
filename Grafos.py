@@ -1,4 +1,14 @@
 from typing import List
+import pandas as pd, networkx as nx, matplotlib.pyplot as plt,tkinter as tk,numpy as np,math,plotly.graph_objects as go
+
+class Airport:
+    def __init__(self, code: str, name: str, city:str, country: str, latitude: float, longitude: float) -> None:
+        self.code=code
+        self.name=name
+        self.city=city
+        self.country=country
+        self.latitude=latitude
+        self.longitude=longitude
 
 class Graph:
 
@@ -103,3 +113,82 @@ class Graph:
 
     def is_acyclic(self) -> bool:
         pass
+
+    
+
+def AirportCodeToIndex(code: str, airports: List[Airport]):
+    for i in range(len(airports)):
+        if airports[i].code==code:
+            return i
+    return False
+
+def distanceFromGeographicCoordinates(latitude: float, longitude: float,latitude2: float, longitude2: float) -> float:
+    # Radio de la Tierra en km
+    R = 6371.0
+
+    # Convertir las coordenadas de grados a radianes
+    lat1_rad = math.radians(latitude)
+    lon1_rad = math.radians(longitude)
+    lat2_rad = math.radians(latitude2)
+    lon2_rad = math.radians(longitude2)
+
+    # Diferencias de latitud y longitud
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+
+    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    distance = R * c
+    return distance
+
+def printGraph():
+    lat=[]
+    lon=[]
+    #Mostrar el grafo completo
+    G=nx.Graph()
+    positions = nx.circular_layout(G)
+    for i in range(len(FlightsDataframe)):
+        G.add_edge(FlightsDataframe.iloc[i]['Source Airport Code'],FlightsDataframe.iloc[i]['Destination Airport Code'])
+    for i in range(len(AirportsDataframe)):
+        lat.append(AirportsDataframe.iloc[i]['Latitude'])
+        lon.append(AirportsDataframe.iloc[i]['Longitude'])
+        positions[AirportsDataframe.iloc[i]['Code']]=np.array([float(AirportsDataframe.iloc[i]['Latitude']),float(AirportsDataframe.iloc[i]['Longitude'])])
+    labels=list(G.nodes)
+    fig=go.Figure()
+    fig.add_trace(go.Scattergeo(lon = lon,lat = lat,text = labels,mode = 'markers',marker=dict(size=8, color='blue'),name="Aeropuertos"))
+    for i in range(len(FlightsDataframe)):
+        lat1, lon1 = FlightsDataframe.iloc[i]['Source Airport Latitude'],FlightsDataframe.iloc[i]['Source Airport Longitude']
+        lat2, lon2 = FlightsDataframe.iloc[i]['Destination Airport Latitude'],FlightsDataframe.iloc[i]['Destination Airport Longitude']
+        fig.add_trace(go.Scattergeo(lon = [lon1, lon2],lat = [lat1, lat2],mode = 'lines',line=dict(width=2, color='red'),opacity=0.7,name=f"{FlightsDataframe.iloc[i]['Source Airport Code']} - {FlightsDataframe.iloc[i]['Destination Airport Code']}"))
+    fig.update_geos(projection_type="orthographic",showcountries=True,showcoastlines=True,showland=True)
+    fig.update_layout(title="Rutas entre Aeropuertos en el Globo Terráqueo",geo=dict(showland=True,landcolor="rgb(243, 243, 243)",oceancolor="rgb(204, 255, 255)",showocean=True))
+    fig.show()
+
+
+
+
+#Obtencion de dataframes de aeropuertos y rutas entre ellos
+FlightsDataframe=pd.read_csv("flights_final.csv")
+#FlightsDataframe=FlightsDataframe.sample(n=60) # <-------Seleccion de n registros aleatorios
+df1=FlightsDataframe[['Source Airport Code','Source Airport Name','Source Airport City','Source Airport Country','Source Airport Latitude','Source Airport Longitude']]
+df2=FlightsDataframe[['Destination Airport Code','Destination Airport Name','Destination Airport City','Destination Airport Country','Destination Airport Latitude','Destination Airport Longitude']]
+df1.columns = ['Code', 'Name', 'City', 'Country', 'Latitude', 'Longitude']
+df2.columns = ['Code', 'Name', 'City', 'Country', 'Latitude', 'Longitude']
+AirportsDataframe=pd.concat([df1, df2], ignore_index=True)
+AirportsDataframe.drop_duplicates(subset='Code', inplace=True, ignore_index=True)
+
+#Creacion de lista de Aeropuertos y sus atributos
+AirportList=[] 
+for i in range(len(AirportsDataframe)):
+        AirportList.append(Airport(AirportsDataframe.iloc[i]['Code'],AirportsDataframe.iloc[i]['Name'],AirportsDataframe.iloc[i]['City'],AirportsDataframe.iloc[i]['Country'],float(AirportsDataframe.iloc[i]['Latitude']),float(AirportsDataframe.iloc[i]['Longitude'])))
+
+#Creacion del grafo
+grafo=Graph(len(AirportsDataframe),False)
+
+for i in range(len(FlightsDataframe)):
+    grafo.add_edge(AirportCodeToIndex(FlightsDataframe.iloc[i]['Source Airport Code'],AirportList),AirportCodeToIndex(FlightsDataframe.iloc[i]['Destination Airport Code'],AirportList),distanceFromGeographicCoordinates(float(FlightsDataframe.iloc[i]['Source Airport Latitude']),float(FlightsDataframe.iloc[i]['Source Airport Longitude']),float(FlightsDataframe.iloc[i]['Destination Airport Latitude']),float(FlightsDataframe.iloc[i]['Destination Airport Longitude'])))
+
+
+
+printGraph()
