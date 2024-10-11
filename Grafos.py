@@ -10,6 +10,7 @@ class Airport: # Clase aeropuerto para almacenar la informacion de cada uno
         self.latitude=latitude
         self.longitude=longitude
 
+
 class Graph:
 
     def __init__(self, n: int, directed: bool = False):
@@ -227,7 +228,7 @@ def printPath(path: List[int]): #Mostrar un camino entre aeropuertos
     fig=go.Figure()
 
     for i in range(len(path)):
-        labels.append(AirportsDataframe.iloc[i]['Code'])
+        labels.append("Codigo: "+AirportsDataframe.iloc[i]['Code']+"\nNombre: "+AirportsDataframe.iloc[i]['Name']+"\nCiudad: "+AirportsDataframe.iloc[i]['City']+"\nPais: "+AirportsDataframe.iloc[i]['Country']+"\nLatitud: "+str(AirportsDataframe.iloc[i]['Latitude'])+"\nLongitud: "+str(AirportsDataframe.iloc[i]['Longitude']))
         lat.append(AirportsDataframe.iloc[i]['Latitude'])
         lon.append(AirportsDataframe.iloc[i]['Longitude'])
         if i!=0:
@@ -237,6 +238,20 @@ def printPath(path: List[int]): #Mostrar un camino entre aeropuertos
     fig.add_trace(go.Scattergeo(lon = lon,lat = lat,text = labels,mode = 'markers',marker=dict(size=8, color='blue'),name="Aeropuertos"))
     fig.update_geos(projection_type="orthographic",showcountries=True,showcoastlines=True,showland=True)
     fig.update_layout(title="Camino minimo entre aeropuertos",geo=dict(showland=True,landcolor="rgb(243, 243, 243)",oceancolor="rgb(204, 255, 255)",showocean=True))
+    fig.show()
+
+def printAirports(path: List[int]): #Mostrar aeropuertos especificos
+    lat=[]
+    lon=[]
+    labels=[]
+    fig=go.Figure()
+    for i in range(len(path)):
+        labels.append("Codigo: "+AirportsDataframe.iloc[i]['Code']+"\nNombre: "+AirportsDataframe.iloc[i]['Name']+"\nCiudad: "+AirportsDataframe.iloc[i]['City']+"\nPais: "+AirportsDataframe.iloc[i]['Country']+"\nLatitud: "+str(AirportsDataframe.iloc[i]['Latitude'])+"\nLongitud: "+str(AirportsDataframe.iloc[i]['Longitude']))
+        lat.append(AirportsDataframe.iloc[i]['Latitude'])
+        lon.append(AirportsDataframe.iloc[i]['Longitude'])
+    fig.add_trace(go.Scattergeo(lon = lon,lat = lat,text = labels,mode = 'markers',marker=dict(size=8, color='blue'),name="Aeropuertos"))
+    fig.update_geos(projection_type="orthographic",showcountries=True,showcoastlines=True,showland=True)
+    fig.update_layout(title="Aeropuertos",geo=dict(showland=True,landcolor="rgb(243, 243, 243)",oceancolor="rgb(204, 255, 255)",showocean=True))
     fig.show()
 
 
@@ -258,3 +273,4 @@ for i in range(len(AirportsDataframe)):
 grafo=Graph(len(AirportsDataframe),False)
 for i in range(len(FlightsDataframe)):
     grafo.add_edge(AirportCodeToIndex(FlightsDataframe.iloc[i]['Source Airport Code'],AirportList),AirportCodeToIndex(FlightsDataframe.iloc[i]['Destination Airport Code'],AirportList),distanceFromGeographicCoordinates(float(FlightsDataframe.iloc[i]['Source Airport Latitude']),float(FlightsDataframe.iloc[i]['Source Airport Longitude']),float(FlightsDataframe.iloc[i]['Destination Airport Latitude']),float(FlightsDataframe.iloc[i]['Destination Airport Longitude'])))
+
