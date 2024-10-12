@@ -1,5 +1,6 @@
 from typing import List
-import pandas as pd, networkx as nx, matplotlib.pyplot as plt,tkinter as tk,numpy as np,math,plotly.graph_objects as go
+import pandas as pd,tkinter as tk,math,plotly.graph_objects as go, heapq
+from tkinter import messagebox, scrolledtext
 
 class Airport: # Clase aeropuerto para almacenar la informacion de cada uno
     def __init__(self, code: str, name: str, city:str, country: str, latitude: float, longitude: float) -> None:
@@ -89,7 +90,7 @@ class Graph:
             return visit
 
     def is_connected(self) -> bool: 
-        return all(self.__c_dfs(0)) #Retorna True si todos los nodos fueron visitados, si no, retorna False
+        return all(self.c_dfs(0)) #Retorna True si todos los nodos fueron visitados, si no, retorna False
 
     def is_eulerian(self) -> bool:
         for i in self.L:
@@ -173,11 +174,22 @@ class Graph:
     def bellman_ford(self,v):
         pass
 
-    def kruskal(self):
+    def kruskal(self) -> List:
         pass
-
-    def prim(self,v):
-        pass
+    
+    def prim(self, v: int) -> List:
+        q = []
+        for u in self.L[v]:
+            heapq.heappush(q, (self.c[v][u], [v, u]))
+        ver, edg = [v], []
+        while len(ver) < self.n and q:
+            cost, (vi, vj) = heapq.heappop(q)
+            if vj not in ver:
+                ver.append(vj)
+                edg.append([cost, [vi, vj]])
+                for vk in self.L[vj]:
+                    heapq.heappush(q, (self.c[vj][vk], [vj, vk]))
+        return edg
 
 
 def AirportCodeToIndex(code: str, airports: List[Airport]): # Funcion para buscar el indice del aeropuerto en la lista de aeropuertos
@@ -274,3 +286,111 @@ grafo=Graph(len(AirportsDataframe),False)
 for i in range(len(FlightsDataframe)):
     grafo.add_edge(AirportCodeToIndex(FlightsDataframe.iloc[i]['Source Airport Code'],AirportList),AirportCodeToIndex(FlightsDataframe.iloc[i]['Destination Airport Code'],AirportList),distanceFromGeographicCoordinates(float(FlightsDataframe.iloc[i]['Source Airport Latitude']),float(FlightsDataframe.iloc[i]['Source Airport Longitude']),float(FlightsDataframe.iloc[i]['Destination Airport Latitude']),float(FlightsDataframe.iloc[i]['Destination Airport Longitude'])))
 
+
+def show_root(frame):
+    frame.withdraw() 
+    root.deiconify()
+def show_functionsWindow(frame):
+    frame.withdraw() 
+    functionsWindow.deiconify()
+def show_selectAirportWindow(frame):
+    frame.withdraw() 
+    selectAirportWindow.deiconify()
+def show_airportInfoWindow(code:str):
+    airportIndex=AirportCodeToIndex(code,AirportList)
+    if airportIndex==False:
+        messagebox.showerror(title="Error", message="No se encontró un aeropuerto con ese codigo")
+    else:
+        # Cuarta ventana (Informacion del aeropuerto)
+        messagebox.showinfo(title="Información del aeropuerto", message=f"Codigo: {AirportList[airportIndex].code}\nNombre: {AirportList[airportIndex].name}\nCiudad: {AirportList[airportIndex].city}\nPaís: {AirportList[airportIndex].country}\nLatitud: {AirportList[airportIndex].latitude}\nLongitud: {AirportList[airportIndex].longitude}")
+        airportInfoWindow = tk.Toplevel()
+        airportInfoWindow.title("Caminos Minimos")
+        airportInfoWindow.geometry("700x500")
+        airportInfoWindow.resizable(False,False) 
+        tk.Label(airportInfoWindow, text="Caminos minimos más largos:", font=("Arial", 14)).place(rely=0.15,relx=0.5, anchor="center")
+        airportsInfoText7=scrolledtext.ScrolledText(airportInfoWindow, width=70,height=10)
+        airportsInfoText7.insert(tk.INSERT,"Codigo:\tNombre:\t\tCiudad:\tPaís:\tLatitud:\tLongitud:\tDistancia:\n")
+        #----------------Agregar la informacion de los caminos mas largos
+        airportsInfoText7.place(relx=0.5,rely=0.38, anchor="center")
+        tk.Label(airportInfoWindow, text="Inserte el codigo de otro aeropuerto para buscar el camino minimo entre ellos:", font=("Arial", 11)).place(rely=0.7,relx=0.5, anchor="center")
+        secondAirportEntry4 = tk.Entry(airportInfoWindow, width=30)
+        secondAirportEntry4.place(rely=0.78,relx=0.5, anchor="center")
+        backButton4 = tk.Button(airportInfoWindow, text="Volver", command=lambda: airportInfoWindow.withdraw())
+        backButton4.place(x=10,y=10)
+        minimumPathButton4 = tk.Button(airportInfoWindow, text="Buscar camino minimo", command=lambda: show_minimum_path(code,secondAirportEntry4.get()))
+        minimumPathButton4.place(rely=0.9,relx=0.5, anchor="center")
+def show_connection():
+    components=grafo.components()
+    comNodes=""
+    if grafo.is_connected():
+        connected="El grafo es conexo"
+    else:
+        connected="El grafo no es conexo"
+    for i in range(len(components)):
+        comNodes+=f"El componente {i+1} tiene {len(components[i])} vértices\n"
+    messagebox.showinfo(title="Información del grafo", message=f"{connected}\nTiene {len(components)} componentes\n{comNodes}")
+def show_minimum_expansion():
+    components=grafo.components()
+    weights=""
+    for i in range(len(components)):
+        weight=0
+        for j in grafo.prim(components[i][0]):
+            weight+=j[0]
+        weights+=f"El componente {i+1} tiene un arbol de expansión con peso {weight}\n"
+    messagebox.showinfo(title="Arboles de expansión minima", message=f"El arbol tiene {len(components)} componentes\n{weights}")
+def show_minimum_path(code1: str, code: str):
+    pass
+
+
+#Interfaz Grafica
+
+# Primera ventana (Inicio)
+root = tk.Tk()
+root.title("Inicio")
+root.geometry("500x300")
+root.resizable(False,False) 
+label1 = tk.Label(root, text="Rutas entre aeropuertos", font=("Arial", 14))
+label1.place(rely=0.25,relx=0.5, anchor="center")
+continue_button = tk.Button(root, text="Continuar", command=lambda: show_functionsWindow(root))
+continue_button.place(rely=0.7,relx=0.5, anchor="center")
+
+# Segunda ventana (Funciones)
+functionsWindow = tk.Toplevel()
+functionsWindow.protocol('WM_DELETE_WINDOW', lambda: root.destroy())
+functionsWindow.title("Funciones")
+functionsWindow.geometry("600x300")
+functionsWindow.resizable(False,False) 
+functionsWindow.withdraw()  # Esconde la ventana al inicio
+label2 = tk.Label(functionsWindow, text="Funciones", font=("Arial", 14))
+label2.place(rely=0.15,relx=0.5, anchor="center")
+backButton2 = tk.Button(functionsWindow, text="Volver", command=lambda: show_root(functionsWindow))
+backButton2.place(x=10,y=10)
+visualizationButton2 = tk.Button(functionsWindow, text="Visualizar grafo", command=lambda: printGraph())
+visualizationButton2.place(rely=0.4,relx=0.5, anchor="center")
+connectionButton2 = tk.Button(functionsWindow, text="Conexidad", command=lambda: show_connection())
+connectionButton2.place(rely=0.55,relx=0.5, anchor="center")
+minimumExpansionButton2 = tk.Button(functionsWindow, text="Arboles de expansion minima", command=lambda: show_minimum_expansion())
+minimumExpansionButton2.place(rely=0.7,relx=0.5, anchor="center")
+selectAirportButton2 = tk.Button(functionsWindow, text="Selección de aeropuerto", command=lambda: show_selectAirportWindow(functionsWindow))
+selectAirportButton2.place(rely=0.85,relx=0.5, anchor="center")
+
+# Tercera ventana (Seleccion de un aeropuerto)
+selectAirportWindow = tk.Toplevel()
+selectAirportWindow.title("Selección de un aeropuerto")
+selectAirportWindow.geometry("600x300")
+selectAirportWindow.resizable(False,False) 
+selectAirportWindow.withdraw()
+selectAirportWindow.protocol('WM_DELETE_WINDOW', lambda: root.destroy())
+tk.Label(selectAirportWindow, text="Selección de un aeropuerto", font=("Arial", 14)).pack(pady=20)
+tk.Label(selectAirportWindow, text="Ingrese el codigo del aeropuerto a seleccionar:", font=("Arial", 12)).pack(pady=20)
+airportCodeEntry3 = tk.Entry(selectAirportWindow, width=30)
+airportCodeEntry3.pack(pady=10)
+backButton3 = tk.Button(selectAirportWindow, text="Volver", command=lambda: show_functionsWindow(selectAirportWindow))
+backButton3.place(x=10,y=10)
+searchButton3 = tk.Button(selectAirportWindow, text="Buscar", command=lambda: show_airportInfoWindow(airportCodeEntry3.get()))
+searchButton3.pack(pady=20)
+
+
+
+# Inicia el bucle principal de la aplicación
+root.mainloop()
