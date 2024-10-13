@@ -138,18 +138,26 @@ class Graph:
                 componentes.append(comp)
         return componentes
 
-    def dijkstra(self,v):
+    def dijkstra(self,v: int):
         d=[math.inf]*self.n
         path=[None]*self.n
         visit=[False]*self.n
         d[v]=0
         while not all(visit):
-            v=min(d,visit)
-            visit[v]=True
-            for i in self.L[v]:
-                if d[v]+self.c[v][i] < d[i] and not visit[i]:
-                    d[i]=d[v]+self.c[v][i]
-                    path[i]=v
+            u = None
+            min_dist = math.inf  # Encuentra el nodo no visitado con la menor distancia
+            for i in range(self.n):
+                if not visit[i] and d[i] <= min_dist:
+                    min_dist = d[i]
+                    u = i
+            if u is None:
+                break
+            
+            visit[u] = True
+            for i in self.L[u]:
+                if d[u] + self.c[u][i] < d[i] and not visit[i]:
+                    d[i] = d[u] + self.c[u][i]
+                    path[i] = u
         return d,path
     
     def floyd_warshall(self):
@@ -240,13 +248,13 @@ def printPath(path: List[int]): #Mostrar un camino entre aeropuertos
     fig=go.Figure()
 
     for i in range(len(path)):
-        labels.append("Codigo: "+AirportsDataframe.iloc[i]['Code']+"\nNombre: "+AirportsDataframe.iloc[i]['Name']+"\nCiudad: "+AirportsDataframe.iloc[i]['City']+"\nPais: "+AirportsDataframe.iloc[i]['Country']+"\nLatitud: "+str(AirportsDataframe.iloc[i]['Latitude'])+"\nLongitud: "+str(AirportsDataframe.iloc[i]['Longitude']))
-        lat.append(AirportsDataframe.iloc[i]['Latitude'])
-        lon.append(AirportsDataframe.iloc[i]['Longitude'])
+        labels.append("Codigo: "+AirportsDataframe.iloc[path[i]]['Code']+"\nNombre: "+AirportsDataframe.iloc[path[i]]['Name']+"\nCiudad: "+AirportsDataframe.iloc[path[i]]['City']+"\nPais: "+AirportsDataframe.iloc[path[i]]['Country']+"\nLatitud: "+str(AirportsDataframe.iloc[path[i]]['Latitude'])+"\nLongitud: "+str(AirportsDataframe.iloc[path[i]]['Longitude']))
+        lat.append(AirportsDataframe.iloc[path[i]]['Latitude'])
+        lon.append(AirportsDataframe.iloc[path[i]]['Longitude'])
         if i!=0:
-            lat1, lon1 = AirportsDataframe.iloc[i-1]['Latitude'],AirportsDataframe.iloc[i-1]['Longitude']
-            lat2, lon2 = AirportsDataframe.iloc[i]['Latitude'],AirportsDataframe.iloc[i]['Longitude']
-            fig.add_trace(go.Scattergeo(lon = [lon1, lon2],lat = [lat1, lat2],mode = 'lines',line=dict(width=2, color='red'),opacity=0.7,name=f"{FlightsDataframe.iloc[AirportCodeToIndex(AirportList[i-1].code,AirportList)]['Source Airport Code']} - {FlightsDataframe.iloc[AirportCodeToIndex(AirportList[i].code,AirportList)]['Destination Airport Code']}"))
+            lat1, lon1 = AirportsDataframe.iloc[path[i-1]]['Latitude'],AirportsDataframe.iloc[path[i-1]]['Longitude']
+            lat2, lon2 = AirportsDataframe.iloc[path[i]]['Latitude'],AirportsDataframe.iloc[path[i]]['Longitude']
+            fig.add_trace(go.Scattergeo(lon = [lon1, lon2],lat = [lat1, lat2],mode = 'lines',line=dict(width=2, color='red'),opacity=0.7,name=f"{FlightsDataframe.iloc[AirportCodeToIndex(AirportList[path[i-1]].code,AirportList)]['Source Airport Code']} - {FlightsDataframe.iloc[AirportCodeToIndex(AirportList[path[i]].code,AirportList)]['Destination Airport Code']}"))
     fig.add_trace(go.Scattergeo(lon = lon,lat = lat,text = labels,mode = 'markers',marker=dict(size=8, color='blue'),name="Aeropuertos"))
     fig.update_geos(projection_type="orthographic",showcountries=True,showcoastlines=True,showland=True)
     fig.update_layout(title="Camino minimo entre aeropuertos",geo=dict(showland=True,landcolor="rgb(243, 243, 243)",oceancolor="rgb(204, 255, 255)",showocean=True))
@@ -310,7 +318,10 @@ def show_airportInfoWindow(code:str):
         tk.Label(airportInfoWindow, text="Caminos minimos más largos:", font=("Arial", 14)).place(rely=0.15,relx=0.5, anchor="center")
         airportsInfoText7=scrolledtext.ScrolledText(airportInfoWindow, width=70,height=10)
         airportsInfoText7.insert(tk.INSERT,"Codigo:\tNombre:\t\tCiudad:\tPaís:\tLatitud:\tLongitud:\tDistancia:\n")
+        
         #----------------Agregar la informacion de los caminos mas largos
+        
+
         airportsInfoText7.place(relx=0.5,rely=0.38, anchor="center")
         tk.Label(airportInfoWindow, text="Inserte el codigo de otro aeropuerto para buscar el camino minimo entre ellos:", font=("Arial", 11)).place(rely=0.7,relx=0.5, anchor="center")
         secondAirportEntry4 = tk.Entry(airportInfoWindow, width=30)
@@ -338,9 +349,37 @@ def show_minimum_expansion():
             weight+=j[0]
         weights+=f"El componente {i+1} tiene un arbol de expansión con peso {weight}\n"
     messagebox.showinfo(title="Arboles de expansión minima", message=f"El arbol tiene {len(components)} componentes\n{weights}")
-def show_minimum_path(code1: str, code: str):
-    pass
+def show_minimum_path(code1: str, code2: str):
+    airport1=AirportCodeToIndex(code1,AirportList)
+    airport2=AirportCodeToIndex(code2,AirportList)
+    print(airport1)
+    if airport1 is False or airport2 is False:
+        messagebox.showerror(title="Error", message="No se encontró un aeropuerto con ese código")
+        return
+    
+    if airport1==airport2:
+        printPath([airport1]) #El aeropuerto inicial y final son el mismo
+        return
+    
+    d,paths=grafo.dijkstra(airport1)
+    if d[airport2]==math.inf:
+        messagebox.showerror(title="Error", message="Los aeropuertos no estan conectados")
+        return
 
+    path=[]
+    v=airport2
+    while v is not None and v!=airport1:
+        path.append(v)
+        v=paths[v]
+
+    if v is None:
+        # Esto significa que no se pudo construir un camino adecuado
+        messagebox.showerror(title="Error", message="No se pudo encontrar un camino válido")
+        return
+
+    path.append(airport1)
+    path=path[::-1]
+    printPath(path)
 
 #Interfaz Grafica
 
@@ -378,7 +417,7 @@ selectAirportButton2.place(rely=0.85,relx=0.5, anchor="center")
 selectAirportWindow = tk.Toplevel()
 selectAirportWindow.title("Selección de un aeropuerto")
 selectAirportWindow.geometry("600x300")
-selectAirportWindow.resizable(False,False) 
+selectAirportWindow.resizable(False,False)
 selectAirportWindow.withdraw()
 selectAirportWindow.protocol('WM_DELETE_WINDOW', lambda: root.destroy())
 tk.Label(selectAirportWindow, text="Selección de un aeropuerto", font=("Arial", 14)).pack(pady=20)
