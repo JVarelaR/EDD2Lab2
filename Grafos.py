@@ -254,7 +254,7 @@ def printPath(path: List[int]): #Mostrar un camino entre aeropuertos
         if i!=0:
             lat1, lon1 = AirportsDataframe.iloc[path[i-1]]['Latitude'],AirportsDataframe.iloc[path[i-1]]['Longitude']
             lat2, lon2 = AirportsDataframe.iloc[path[i]]['Latitude'],AirportsDataframe.iloc[path[i]]['Longitude']
-            fig.add_trace(go.Scattergeo(lon = [lon1, lon2],lat = [lat1, lat2],mode = 'lines',line=dict(width=2, color='red'),opacity=0.7,name=f"{AirportsDataframe.iloc[AirportCodeToIndex(AirportList[path[i-1]].code,AirportList)]['Source Airport Code']} - {AirportsDataframe.iloc[AirportCodeToIndex(AirportList[path[i]].code,AirportList)]['Destination Airport Code']}"))
+            fig.add_trace(go.Scattergeo(lon = [lon1, lon2],lat = [lat1, lat2],mode = 'lines',line=dict(width=2, color='red'),opacity=0.7))
     fig.add_trace(go.Scattergeo(lon = lon,lat = lat,text = labels,mode = 'markers',marker=dict(size=8, color='blue'),name="Aeropuertos"))
     fig.update_geos(projection_type="orthographic",showcountries=True,showcoastlines=True,showland=True)
     fig.update_layout(title="Camino minimo entre aeropuertos",geo=dict(showland=True,landcolor="rgb(243, 243, 243)",oceancolor="rgb(204, 255, 255)",showocean=True))
@@ -310,13 +310,12 @@ def show_airportInfoWindow(code:str):
         messagebox.showerror(title="Error", message="No se encontró un aeropuerto con ese codigo")
     else:
         # Cuarta ventana (Informacion del aeropuerto)
-        messagebox.showinfo(title="Información del aeropuerto", message=f"Codigo: {AirportList[airportIndex].code}\nNombre: {AirportList[airportIndex].name}\nCiudad: {AirportList[airportIndex].city}\nPaís: {AirportList[airportIndex].country}\nLatitud: {AirportList[airportIndex].latitude}\nLongitud: {AirportList[airportIndex].longitude}")
         airportInfoWindow = tk.Toplevel()
         airportInfoWindow.title("Caminos Minimos")
         airportInfoWindow.geometry("1300x500")
         airportInfoWindow.resizable(False,False) 
         tk.Label(airportInfoWindow, text="Caminos minimos más largos:", font=("Arial", 14)).place(rely=0.15,relx=0.5, anchor="center")
-        airportsInfoText7=scrolledtext.ScrolledText(airportInfoWindow, width=150,height=10)
+        airportsInfoText7=scrolledtext.ScrolledText(airportInfoWindow, width=150,height=11)
         airportsInfoText7.config(state="normal")
         airportsInfoText7.insert(tk.INSERT,"Codigo:\tNombre:\t\t\t\tCiudad:\t\t\tPaís:\t\t\t\tLatitud:\t\tLongitud:\t\tDistancia:\n")
         
@@ -335,7 +334,7 @@ def show_airportInfoWindow(code:str):
             i+=1
         airportsInfoText7.config(state="disabled")
 
-        airportsInfoText7.place(relx=0.5,rely=0.38, anchor="center")
+        airportsInfoText7.place(relx=0.5,rely=0.39, anchor="center")
         tk.Label(airportInfoWindow, text="Inserte el codigo de otro aeropuerto para buscar el camino minimo entre ellos:", font=("Arial", 11)).place(rely=0.7,relx=0.5, anchor="center")
         secondAirportEntry4 = tk.Entry(airportInfoWindow, width=30)
         secondAirportEntry4.place(rely=0.78,relx=0.5, anchor="center")
@@ -343,6 +342,9 @@ def show_airportInfoWindow(code:str):
         backButton4.place(x=10,y=10)
         minimumPathButton4 = tk.Button(airportInfoWindow, text="Buscar camino minimo", command=lambda: show_minimum_path(code,secondAirportEntry4.get()))
         minimumPathButton4.place(rely=0.9,relx=0.5, anchor="center")
+
+        messagebox.showinfo(title="Información del aeropuerto", message=f"Codigo: {AirportList[airportIndex].code}\nNombre: {AirportList[airportIndex].name}\nCiudad: {AirportList[airportIndex].city}\nPaís: {AirportList[airportIndex].country}\nLatitud: {AirportList[airportIndex].latitude}\nLongitud: {AirportList[airportIndex].longitude}")
+
 def show_connection():
     components=grafo.components()
     comNodes=""
