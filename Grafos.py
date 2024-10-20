@@ -248,13 +248,13 @@ def printPath(path: List[int]): #Mostrar un camino entre aeropuertos
     fig=go.Figure()
 
     for i in range(len(path)):
-        labels.append("Codigo: "+AirportsDataframe.iloc[path[i]]['Code']+"\nNombre: "+AirportsDataframe.iloc[path[i]]['Name']+"\nCiudad: "+AirportsDataframe.iloc[path[i]]['City']+"\nPais: "+AirportsDataframe.iloc[path[i]]['Country']+"\nLatitud: "+str(AirportsDataframe.iloc[path[i]]['Latitude'])+"\nLongitud: "+str(AirportsDataframe.iloc[path[i]]['Longitude']))
+        labels.append("Codigo: "+AirportsDataframe.iloc[path[i]]['Code']+"\nNombre: "+AirportsDataframe.iloc[path[i]]['Name']+"\nCiudad: "+AirportsDataframe.iloc[path[i]]['City']+"\nPais: "+AirportsDataframe.iloc[path[i]]['Country'])
         lat.append(AirportsDataframe.iloc[path[i]]['Latitude'])
         lon.append(AirportsDataframe.iloc[path[i]]['Longitude'])
         if i!=0:
             lat1, lon1 = AirportsDataframe.iloc[path[i-1]]['Latitude'],AirportsDataframe.iloc[path[i-1]]['Longitude']
             lat2, lon2 = AirportsDataframe.iloc[path[i]]['Latitude'],AirportsDataframe.iloc[path[i]]['Longitude']
-            fig.add_trace(go.Scattergeo(lon = [lon1, lon2],lat = [lat1, lat2],mode = 'lines',line=dict(width=2, color='red'),opacity=0.7))
+            fig.add_trace(go.Scattergeo(lon = [lon1, lon2],lat = [lat1, lat2],mode = 'lines',line=dict(width=2, color='red'),opacity=0.7, name=f"{AirportList[path[i-1]].code} - {AirportList[path[i]].code}"))
     fig.add_trace(go.Scattergeo(lon = lon,lat = lat,text = labels,mode = 'markers',marker=dict(size=8, color='blue'),name="Aeropuertos"))
     fig.update_geos(projection_type="orthographic",showcountries=True,showcoastlines=True,showland=True)
     fig.update_layout(title="Camino minimo entre aeropuertos",geo=dict(showland=True,landcolor="rgb(243, 243, 243)",oceancolor="rgb(204, 255, 255)",showocean=True))
